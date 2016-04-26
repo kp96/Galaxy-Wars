@@ -15,6 +15,8 @@ def play():
     timeForPower = False
     powerSent = False
     powercords = []
+    freezePower = False
+    freezeTimer = 10
     # Set the width and height of the window
     width, height = int(pygame.display.Info().current_w), int(pygame.display.Info().current_h)
     # Create the window
@@ -241,16 +243,17 @@ def play():
         for badguy in badguys:
             if badguy[0]<-64:
                 badguys.pop(index)
-            badguy[0]-=7
-            if cnt < 30 and dec is False:
-                badguy[1] += 7
-                cnt += 1
-            else:
-                dec = True
-                cnt -= 1
-                badguy[1] -= 7
-                if cnt is 0:
-                    dec = False
+            if freezePower is False:
+                badguy[0]-=7
+                if cnt < 30 and dec is False:
+                    badguy[1] += 7
+                    cnt += 1
+                else:
+                    dec = True
+                    cnt -= 1
+                    badguy[1] -= 7
+                    if cnt is 0:
+                        dec = False
             # Attack castle
             badrect=pygame.Rect(badguyimg.get_rect())
             badrect.top=badguy[1]
@@ -300,6 +303,11 @@ def play():
             timeForPower = False
             screen.blit(power, powercords)
 
+        if freezePower:
+            freezeTimer += 10
+            if freezeTimer > 1000:
+                freezePower = False
+                freezeTimer = 0
         # Check if power is Taken
         if powerSent:
             powerRect = pygame.Rect(power.get_rect())
@@ -309,6 +317,7 @@ def play():
             playerRect.top = playerpos[1]
             playerRect.left = playerpos[0]
             if powerRect.colliderect(playerRect):
+                freezePower = True
                 print "Collision Detected"
                 powerSent = False
         # Draw clock
