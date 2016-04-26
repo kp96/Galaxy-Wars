@@ -12,6 +12,8 @@ except:
 def play():
     cnt = 0
     dec = False
+    eclipse = 0
+    dececc = False
     # Define variables for freeze power
     timeForFreezePower = False
     freezePowerSent = False
@@ -24,6 +26,12 @@ def play():
     bulletpowercord = []
     bulletPower = False
     bulletTimer = 10
+    # Define variables for danger power
+    timeForDangerPower = False
+    dangerPowerSent = False
+    dangerpowercord = []
+    dangerPower = False
+    dangerTimer = 10
     # Set the width and height of the window
     width, height = int(pygame.display.Info().current_w), int(pygame.display.Info().current_h)
     # Create the window
@@ -79,14 +87,20 @@ def play():
     player = pygame.image.load("resources/images/dude.png")
     # Load the power  freeze image
     power_freeze = pygame.image.load("resources/images/power_freeze.png")
+    # Load thunder image
+    thunder = pygame.image.load("resources/images/thunder.png")
     # Load the power bullet image
     power_bullet = pygame.image.load("resources/images/power_bullet.png")
+    # Load the power danger image
+    power_danger = pygame.image.load("resources/images/power_danger.png")
     # Green Bullet
     bullet_green = pygame.image.load("resources/images/bullet_green.png")
     # Load the background image
     bgmain = pygame.image.load("resources/images/starfield.png")
     # Red Sun level 1
     sunred = pygame.image.load("resources/images/SunRed.png")
+    # Blue Sun Danger
+    sunblue = pygame.image.load("resources/images/SunBlue.png")
     # Load the image of the castles
     castle = pygame.image.load("resources/images/castle.png")
     # Load the image for the arrows
@@ -134,7 +148,6 @@ def play():
     running = 1
     exitcode = 0
     while running:
-        print acc[0]
         # Set display mode if changed
         if prevFS != settings.getFullscreen():
             if settings.getFullscreen() == True:
@@ -178,7 +191,20 @@ def play():
         screen.fill(0)
         # Draw the background
         screen.blit(bgmain, (0, 0))
-        screen.blit(sunred, (width // 2, 0))
+        
+        if dangerPower:
+            eclipse += 10
+            if eclipse > 100:
+                screen.blit(sunblue, (width // 2, 0))
+            else:
+                screen.blit(sunred, (width // 2, 0))
+            if eclipse % 20 == 0:
+                screen.blit(thunder, (width // 2, 0))
+            if eclipse > 200:
+                eclipse = 0
+        else:
+            screen.blit(sunred, (width // 2, 0))
+
         # Draw the castles
         screen.blit(castle, castle1)
         screen.blit(castle, castle2)
@@ -230,8 +256,17 @@ def play():
         # Draw arrows
         for bullet in arrows:
             index=0
-            velx=math.cos(bullet[0])*20
-            vely=math.sin(bullet[0])*20
+            velx = 0
+            vely = 0
+            if bulletPower and dangerPower is False:
+                velx=math.cos(bullet[0])*30
+                vely=math.sin(bullet[0])*30
+            elif dangerPower is False:
+                velx=math.cos(bullet[0])*20
+                vely=math.sin(bullet[0])*20
+            elif dangerPower:
+                velx=math.cos(bullet[0])*10
+                vely=math.sin(bullet[0])*10
             bullet[1]+=velx
             bullet[2]+=vely
             if bullet[1]<-64 or bullet[1]>width or bullet[2]<-64 or bullet[2]>height:
@@ -259,8 +294,19 @@ def play():
         for badguy in badguys:
             if badguy[0]<-64:
                 badguys.pop(index)
-            if freezePower is False:
+            if freezePower is False and dangerPower is False:
                 badguy[0]-=7
+                if cnt < 30 and dec is False:
+                    badguy[1] += 7
+                    cnt += 1
+                else:
+                    dec = True
+                    cnt -= 1
+                    badguy[1] -= 7
+                    if cnt is 0:
+                        dec = False
+            elif dangerPower:
+                badguy[0] -= 14
                 if cnt < 30 and dec is False:
                     badguy[1] += 7
                     cnt += 1
@@ -287,6 +333,10 @@ def play():
                 if badrect.colliderect(bullrect):
                     enemy.play()
                     acc[0]+=1
+                    if acc[0] % 3 == 0:
+                        timeForDangerPower = True
+                    else:
+                        timeForDangerPower = False
                     if acc[0] % 5 == 0:
                         timeForFreezePower = True
                     else:
@@ -306,6 +356,12 @@ def play():
             screen.blit(badguyimg, badguy)
 
         # Draw power if power sent is true
+        if dangerPowerSent:
+            dangerpowercord[0] -= 7
+            screen.blit(power_danger, dangerpowercord)
+            if dangerpowercord[0] < 0:
+                dangerPowerSent = False
+
         if bulletPowerSent:
             bulletpowercord[0] -= 7
             screen.blit(power_bullet, bulletpowercord)
@@ -317,6 +373,16 @@ def play():
             screen.blit(power_freeze, freezepowercord)
             if freezepowercord[0] < 0:
                 freezePowerSent = False
+
+        if timeForDangerPower and dangerPowerSent == False:
+            powerheight1 = height/9.6
+            powerheight2 = height/1.1
+            powerheight = random.randint(int(powerheight1), int(powerheight2))
+            dangerpowercord = [width, playerpos[1]]
+            print "dangerPowerSent"
+            dangerPowerSent = True
+            timeForDangerPower = False
+            screen.blit(power_danger, dangerpowercord)
 
         if timeForBulletPower and bulletPowerSent == False:
             powerheight1 = height/9.6
@@ -339,6 +405,12 @@ def play():
             timeForFreezePower = False
             screen.blit(power_freeze, freezepowercord)
 
+        if dangerPower:
+            dangerTimer += 10
+            if dangerTimer > 2000:
+                dangerPower = False
+                dangerTimer = 0
+
         if bulletPower:
             bulletTimer += 10
             if bulletTimer > 2000:
@@ -352,6 +424,17 @@ def play():
                 freezeTimer = 0
 
         # Check if power is Taken
+        if dangerPowerSent:
+            dangerpowerRect = pygame.Rect(power_danger.get_rect())
+            playerRect = pygame.Rect(player.get_rect())
+            dangerpowerRect.top = dangerpowercord[1]
+            dangerpowerRect.left = dangerpowercord[0]
+            playerRect.top = playerpos[1]
+            playerRect.left = playerpos[0]
+            if dangerpowerRect.colliderect(playerRect):
+                dangerPower = True
+                dangerPowerSent = False
+
         if bulletPowerSent:
             bullpowerRect = pygame.Rect(power_bullet.get_rect())
             playerRect = pygame.Rect(player.get_rect())
