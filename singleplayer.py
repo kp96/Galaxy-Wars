@@ -12,11 +12,18 @@ except:
 def play():
     cnt = 0
     dec = False
-    timeForPower = False
-    powerSent = False
-    powercords = []
+    # Define variables for freeze power
+    timeForFreezePower = False
+    freezePowerSent = False
+    freezepowercord = []
     freezePower = False
     freezeTimer = 10
+    # Define variables for bullet power
+    timeForBulletPower = False
+    bulletPowerSent = False
+    bulletpowercord = []
+    bulletPower = False
+    bulletTimer = 10
     # Set the width and height of the window
     width, height = int(pygame.display.Info().current_w), int(pygame.display.Info().current_h)
     # Create the window
@@ -70,10 +77,15 @@ def play():
     # Load images
     # Load the players image
     player = pygame.image.load("resources/images/dude.png")
-    # Load the power image
-    power = pygame.image.load("resources/images/power.png")
+    # Load the power  freeze image
+    power_freeze = pygame.image.load("resources/images/power_freeze.png")
+    # Load the power bullet image
+    power_bullet = pygame.image.load("resources/images/power_bullet.png")
+    # Green Bullet
+    bullet_green = pygame.image.load("resources/images/bullet_green.png")
     # Load the background image
     bgmain = pygame.image.load("resources/images/starfield.png")
+    # Red Sun level 1
     sunred = pygame.image.load("resources/images/SunRed.png")
     # Load the image of the castles
     castle = pygame.image.load("resources/images/castle.png")
@@ -227,7 +239,11 @@ def play():
             index+=1
             for projectile in arrows:
                 arrow1 = pygame.transform.rotate(arrow, 360-projectile[0]*57.29)
-                screen.blit(arrow1, (projectile[1], projectile[2]))
+                bullet_green1 = pygame.transform.rotate(bullet_green, 360-projectile[0]*57.29)
+                if bulletPower:
+                    screen.blit(bullet_green1, (projectile[1], projectile[2]))
+                else:
+                    screen.blit(arrow1, (projectile[1], projectile[2]))
         # Draw badguys
         if badtimer==0:
             badheight1 = height/9.6
@@ -272,12 +288,16 @@ def play():
                     enemy.play()
                     acc[0]+=1
                     if acc[0] % 5 == 0:
-                        print "yo man"
-                        timeForPower = True
+                        timeForFreezePower = True
                     else:
-                        timeForPower = False
+                        timeForFreezePower = False
+                    if acc[0] % 7 == 0:
+                        timeForBulletPower = True
+                    else:
+                        timeForBulletPower = False
                     badguys.pop(index)
-                    arrows.pop(index1)
+                    if bulletPower == False:
+                        arrows.pop(index1)
                 index1+=1
             # Next bad guy
             index+=1
@@ -285,41 +305,77 @@ def play():
         for badguy in badguys:
             screen.blit(badguyimg, badguy)
 
-        # Draw power if score  = 0 mod 5
-        
-        if powerSent:
-            powercords[0] -= 7
-            screen.blit(power, powercords)
-            if powercords[0] < 0:
-                powerSent = False
+        # Draw power if power sent is true
+        if bulletPowerSent:
+            bulletpowercord[0] -= 7
+            screen.blit(power_bullet, bulletpowercord)
+            if bulletpowercord[0] < 0:
+                bulletPowerSent = False
 
-        if timeForPower and powerSent == False:
+        if freezePowerSent:
+            freezepowercord[0] -= 7
+            screen.blit(power_freeze, freezepowercord)
+            if freezepowercord[0] < 0:
+                freezePowerSent = False
+
+        if timeForBulletPower and bulletPowerSent == False:
             powerheight1 = height/9.6
             powerheight2 = height/1.1
             powerheight = random.randint(int(powerheight1), int(powerheight2))
-            powercords = [width, powerheight]
-            print "powerSent"
-            powerSent = True
-            timeForPower = False
-            screen.blit(power, powercords)
+            bulletpowercord = [width, powerheight]
+            print "bulletPowerSent"
+            bulletPowerSent = True
+            timeForBulletPower = False
+            screen.blit(power_bullet, bulletpowercord)
+
+
+        if timeForFreezePower and freezePowerSent == False:
+            powerheight1 = height/9.6
+            powerheight2 = height/1.1
+            powerheight = random.randint(int(powerheight1), int(powerheight2))
+            freezepowercord = [width, powerheight]
+            print "freezePowerSent"
+            freezePowerSent = True
+            timeForFreezePower = False
+            screen.blit(power_freeze, freezepowercord)
+
+        if bulletPower:
+            bulletTimer += 10
+            if bulletTimer > 2000:
+                bulletPower = False
+                bulletTimer = 0
 
         if freezePower:
             freezeTimer += 10
             if freezeTimer > 1000:
                 freezePower = False
                 freezeTimer = 0
+
         # Check if power is Taken
-        if powerSent:
-            powerRect = pygame.Rect(power.get_rect())
+        if bulletPowerSent:
+            bullpowerRect = pygame.Rect(power_bullet.get_rect())
             playerRect = pygame.Rect(player.get_rect())
-            powerRect.top = powercords[1]
-            powerRect.left = powercords[0]
+            bullpowerRect.top = bulletpowercord[1]
+            bullpowerRect.left = bulletpowercord[0]
+            playerRect.top = playerpos[1]
+            playerRect.left = playerpos[0]
+            if bullpowerRect.colliderect(playerRect):
+                bulletPower = True
+                bulletPowerSent = False
+
+
+        if freezePowerSent:
+            powerRect = pygame.Rect(power_freeze.get_rect())
+            playerRect = pygame.Rect(player.get_rect())
+            powerRect.top = freezepowercord[1]
+            powerRect.left = freezepowercord[0]
             playerRect.top = playerpos[1]
             playerRect.left = playerpos[0]
             if powerRect.colliderect(playerRect):
                 freezePower = True
                 print "Collision Detected"
-                powerSent = False
+                freezePowerSent = False
+
         # Draw clock
         font = pygame.font.Font("freesansbold.ttf", 24)
         survivedtext = font.render(str((90000-pygame.time.get_ticks()+startticks)/60000)+":"+str((90000-pygame.time.get_ticks()+startticks)/1000%60).zfill(2), True, (0,0,0))
