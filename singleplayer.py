@@ -14,6 +14,8 @@ def play():
     dec = False
     eclipse = 0
     dececc = False
+    # Define varibale for Level
+    isLevelOne = True
     # Define variables for freeze power
     timeForFreezePower = False
     freezePowerSent = False
@@ -89,6 +91,8 @@ def play():
     power_freeze = pygame.image.load("resources/images/power_freeze.png")
     # Load thunder image
     thunder = pygame.image.load("resources/images/thunder.png")
+    # Load backgrounds
+    bgmorning = pygame.image.load("resources/images/bgmorning.jpg")
     # Load the power bullet image
     power_bullet = pygame.image.load("resources/images/power_bullet.png")
     # Load the power danger image
@@ -190,9 +194,13 @@ def play():
         # Clear the screen before drawing it again
         screen.fill(0)
         # Draw the background
-        screen.blit(bgmain, (0, 0))
-        
-        if dangerPower:
+        if isLevelOne:
+            screen.blit(bgmorning, (0, 0))
+        else:
+            screen.blit(bgmain, (0,0))
+        if acc[0] > 25:
+            isLevelOne = False
+        if dangerPower and isLevelOne == False:
             eclipse += 10
             if eclipse > 100:
                 screen.blit(sunblue, (width // 2, 0))
@@ -306,14 +314,17 @@ def play():
                     if cnt is 0:
                         dec = False
             elif dangerPower:
-                badguy[0] -= 14
+                badguy[0] -= 20
+                xx = random.randint(0, 1)
                 if cnt < 30 and dec is False:
-                    badguy[1] += 7
+                    if xx == 1:
+                        badguy[1] += 7
                     cnt += 1
                 else:
                     dec = True
                     cnt -= 1
-                    badguy[1] -= 7
+                    if xx == 1:
+                        badguy[1] -= 7
                     if cnt is 0:
                         dec = False
             # Attack castle
@@ -333,7 +344,7 @@ def play():
                 if badrect.colliderect(bullrect):
                     enemy.play()
                     acc[0]+=1
-                    if acc[0] % 3 == 0:
+                    if acc[0] % 3 == 0 and isLevelOne == False:
                         timeForDangerPower = True
                     else:
                         timeForDangerPower = False
@@ -461,7 +472,15 @@ def play():
 
         # Draw clock
         font = pygame.font.Font("freesansbold.ttf", 24)
-        survivedtext = font.render(str((90000-pygame.time.get_ticks()+startticks)/60000)+":"+str((90000-pygame.time.get_ticks()+startticks)/1000%60).zfill(2), True, (0,0,0))
+        survivedtext = font.render(str("Score: " + str(acc[0])) , True, (255,0,0))
+        leveltext = ""
+        if isLevelOne:
+            leveltext= font.render(str("Level: 1") , True, (0,0,255))
+        else:
+            leveltext= font.render(str("Level: 2") , True, (0,0,255))
+        levelrect = leveltext.get_rect()
+        levelrect.topleft = [250, 5]
+        screen.blit(leveltext, levelrect)
         textRect = survivedtext.get_rect()
         textRect.topright=[width-5, 5]
         screen.blit(survivedtext, textRect)
@@ -638,9 +657,7 @@ def play():
     
         # Win/Lose check
         # Win
-        if (pygame.time.get_ticks()-startticks)>=90000:
-            running=0
-            exitcode=1
+        
         # Lose
         if healthvalue<=0:
             running=0
